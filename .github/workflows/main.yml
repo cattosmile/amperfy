@@ -1,17 +1,25 @@
 name: Build IPA
-on: workflow_dispatch # This allows you to run it manually with a button click
+on: workflow_dispatch
 
 jobs:
   build:
-    runs-on: macos-14 # Uses Apple Silicon runner (Sonoma)
+    runs-on: macos-14
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          submodules: recursive # <--- Crucial for Amperfy to work!
+          submodules: recursive
 
       - name: Set up Xcode
         run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Fix Project Settings (Downgrade Swift & iOS Version)
+        run: |
+          # Force iOS Deployment Target from 26.0 to 17.0
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 26.0;/IPHONEOS_DEPLOYMENT_TARGET = 17.0;/g' Amperfy.xcodeproj/project.pbxproj
+          
+          # Force Swift Version from 6.0 to 5.0 (Xcode 15.4 compatible)
+          sed -i '' 's/SWIFT_VERSION = 6.0;/SWIFT_VERSION = 5.0;/g' Amperfy.xcodeproj/project.pbxproj
 
       - name: Build Archive
         run: |
@@ -31,5 +39,5 @@ jobs:
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: Amperfy-Unsigned
+          name: Amperfy-Fixed
           path: Amperfy.ipa
